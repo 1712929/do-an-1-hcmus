@@ -73,7 +73,7 @@ void xuatthongtin(FILE *doc,sv *SV, int &n)
 	{
 		wprintf(L"\n\n\t************* SINH VIÊN THỨ %d ", i + 1);
 		wprintf(L"\n-MSSV: %ls ", SV[i].mssv);
-		wprintf(L"\n-H? tên: %ls  ", SV[i].hoten);
+		wprintf(L"\n-Họ tên: %ls  ", SV[i].hoten);
 		wprintf(L"\n-Khoa: %ls ", SV[i].khoa);
 		printf("\n-Khóa: %d  ", SV[i].nienkhoa);
 		wprintf(L"\n-Email: %ls  ", SV[i].email);
