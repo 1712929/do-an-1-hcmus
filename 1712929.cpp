@@ -1,11 +1,9 @@
-﻿#include <fcntl.h> //_O_U16TEXT
+#include <fcntl.h> //_O_U16TEXT
 #include <io.h>    //_setmode()
 #include <stdio.h>
 #include <iostream>
 #include <wchar.h>
 #include <conio.h>
-#include <fstream>
-#include <sstream>
 #pragma warning(disable: 4996 )
 struct sv
 {
@@ -15,104 +13,91 @@ struct sv
 	int nienkhoa;
 	wchar_t ngaysinh[11];
 	wchar_t image[100];
-	wchar_t motabanthan[1001];
+	wchar_t mota[1001];
+	wchar_t email[50];
 	wchar_t sothich1[101];
 	wchar_t sothich2[101];
 };
 int demsosv(FILE *&doc)
 {
 	int dem = 0;
-	wchar_t *a = new wchar_t[256];
-	if (a == NULL) {
-		printf("No memory\n");
-		return 1;
-	}
-	if ((doc = _wfopen(L"npvy.csv", L"r")) == NULL) //Đọc file
-	{
-		printf("File could not be opened.\n");
-	}
+	wchar_t *a = new wchar_t[1600];
 	while (!feof(doc))
 	{
-		fgetws(a, 255, doc);
-		if (!feof(doc))
-		{
-			fgetws(a, 255, doc);
-			dem++;
-		}
-		else break;
+		fgetws(a, 1600, doc);
+		dem++;
 	}
-	return dem;
+	return dem - 1;
 }
-void doctungthongtin(FILE *&p, wchar_t *arvg[])
+void docthongtin(FILE *doc, sv *&x, int &n)
 {
-	unsigned int nskiplines, currentline, lenlongestvalue;
-	wchar_t *temp = new wchar_t[255];
-	int c;
-	unsigned int x; // danh dau ki tu gia tri
-	int QuotationOnOff; //0 - off, 1 - on
-	nskiplines = _wtoi(arvg[2]);
-	lenlongestvalue = _wtoi(arvg[3]);
-	if (p = _wfopen(L"npvy.csv", L"r"))
+	n = demsosv(doc);
+	x = new sv[n];
+	fseek(doc, 124L, SEEK_SET);
+	for (int i = 0; i < n; i++)
 	{
-		rewind(p);
-		currentline = 1;
-		x = 0;
-		QuotationOnOff = 0;
-		while (c = fgetwc(p) != EOF)
+		fwscanf(doc, L"%[^,],%[^,],%[^,],%d,%[^,],%[^,],%[^,],", &x[i].mssv, &x[i].hoten, &x[i].khoa, &x[i].nienkhoa, &x[i].email, &x[i].ngaysinh, &x[i].image);
+		wchar_t ch = fgetwc(doc);
+		if (ch == L'\"')
+			fwscanf(doc, L"%[^\"]\",", &x[i].sothich1);
+		else
 		{
-			switch (c)
-			{
-			case ',':
-				if (!QuotationOnOff&& currentline > nskiplines)
-				{
-					temp[x] = '\0';
-					x = 0;
-				}
-				break;
-			case '\n':
-				if (currentline > nskiplines)
-				{
-					temp[x] = '\0';
-					x = 0;
-				}
-				currentline++;
-				break;
-			case'\"':
-				if (currentline > nskiplines)
-				{
-					if (!QuotationOnOff)
-					{
-						QuotationOnOff = 1;
-						temp[x] = c;
-						x++;
-					}
-				}
-				break;
-			default:
-				if (currentline > nskiplines)
-				{
-					temp[x] = c;
-					x++;
-				}
-				break;
-			}
+			fseek(doc, -1L, SEEK_CUR);
+			fwscanf(doc, L"%[^,],", &x[i].sothich1);
+			x[i].sothich1[0] = ch;
+		}
+		ch = fgetwc(doc);
+		if (ch == L'\"')
+			fwscanf(doc, L"%[^\"]\",", &x[i].sothich2);
+		else
+		{
+			fseek(doc, -1L, SEEK_CUR);
+			fwscanf(doc, L"%[^,],", &x[i].sothich2);
+			x[i].sothich2[0] = ch;
+		}
+		ch = fgetwc(doc);
+		if (ch == L'\"')
+			fwscanf(doc, L"%[^\"]\"\n", &x[i].mota);
+		else
+		{
+			fseek(doc, -1L, SEEK_CUR);
+			fwscanf(doc, L"%[^\n]\n", &x[i].mota);
+			x[i].mota[0] = ch;
 		}
 	}
 }
-void docfile(sv *p,FILE *&doc)
+void xuatthongtin(FILE *doc,sv *SV, int &n)
 {
-	int i = 0;
-	wchar_t ch;
-	_setmode(_fileno(stdout), _O_WTEXT); //xuat
-	_setmode(_fileno(stdin), _O_WTEXT);  //vao
-	int vtten1 = ftell(doc);
-
+	n = demsosv(doc);
+	for (int i = 0; i < n; i++)
+	{
+		wprintf(L"\n\n\t************* SINH VIÊN THỨ %d ", i + 1);
+		wprintf(L"\n-MSSV: %ls ", SV[i].mssv);
+		wprintf(L"\n-H? tên: %ls  ", SV[i].hoten);
+		wprintf(L"\n-Khoa: %ls ", SV[i].khoa);
+		printf("\n-Khóa: %d  ", SV[i].nienkhoa);
+		wprintf(L"\n-Email: %ls  ", SV[i].email);
+		wprintf(L"\n-Ngày sinh: %ls  ", SV[i].ngaysinh);
+		wprintf(L"\n-Hình ảnh: %ls  ", SV[i].image);
+		wprintf(L"\n-Mô tả bản thân:  %ls ", SV[i].mota);
+		wprintf(L"\n-Sở thích 1: %ls  ", SV[i].sothich1);
+		wprintf(L"\n-Sở thích 2: %ls  ", SV[i].sothich2);
+	}
 }
 void main()
 {
-	FILE *a;
-	int dem;
-	dem = demsosv(a);
-	printf("%d\n", dem);
+	FILE *doc_csv;
+	sv *SV = NULL;
+	int n;
+	_wfopen_s(&doc_csv, L"npvy.csv", L"rt,ccs=UTF-8");
+	if (doc_csv != NULL)
+	{
+		docthongtin(doc_csv, SV, n);
+		xuatthongtin(doc_csv,SV,n);
+		fclose(doc_csv);
+	}
+	else
+		printf("File could not be opened.\n");
+	delete[]SV;
 	system("pause");
 }
