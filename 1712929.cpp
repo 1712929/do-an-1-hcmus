@@ -7,16 +7,15 @@
 #pragma warning(disable: 4996 )
 struct sv
 {
-	wchar_t mssv[11];
-	wchar_t hoten[31];
-	wchar_t khoa[31];
-	int nienkhoa;
-	wchar_t ngaysinh[11];
-	wchar_t image[100];
-	wchar_t mota[1001];
-	wchar_t email[50];
-	wchar_t sothich1[101];
-	wchar_t sothich2[101];
+	wchar_t *mssv;
+	wchar_t *hoten;
+	wchar_t *khoa;
+	wchar_t *nienkhoa;
+	wchar_t *ngaysinh;
+	wchar_t *image;
+	wchar_t *mota;
+	wchar_t *email;
+	wchar_t **sothich;
 };
 int demsosv(FILE *&doc)
 {
@@ -27,46 +26,61 @@ int demsosv(FILE *&doc)
 		fgetws(a, 1600, doc);
 		dem++;
 	}
-	return dem - 1;
+	return dem-1;
 }
-void docthongtin(FILE *doc, sv *&x, int &n)
+void docthongtin1sv(FILE *doc, unsigned &demsothich, sv &A)
 {
-	n = demsosv(doc);
-	x = new sv[n];
-	fseek(doc, 124L, SEEK_SET);
-	for (int i = 0; i < n; i++)
+	_setmode(_fileno(doc), _O_U8TEXT);
+	wchar_t* p = (wchar_t*)malloc(sizeof(sv));
+	demsothich = 0;
+	wchar_t* flag[10];
+	wchar_t* del;
+	if (doc != NULL)
 	{
-		fwscanf(doc, L"%[^,],%[^,],%[^,],%d,%[^,],%[^,],%[^,],", &x[i].mssv, &x[i].hoten, &x[i].khoa, &x[i].nienkhoa, &x[i].email, &x[i].ngaysinh, &x[i].image);
-		wchar_t ch = fgetwc(doc);
-		if (ch == L'\"')
-			fwscanf(doc, L"%[^\"]\",", &x[i].sothich1);
-		else
+		fgetws(p, sizeof(sv), doc);
+		del = wcstok(p, L"\"");
+		A.mssv = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		A.hoten = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		A.khoa = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		A.nienkhoa = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		A.ngaysinh = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		A.image = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		A.email = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		A.mota = wcstok(NULL, L"\"");
+		del = wcstok(NULL, L"\"");
+		flag[demsothich] = wcstok(NULL, L"\"");
+		while (flag[demsothich] != NULL)
 		{
-			fseek(doc, -1L, SEEK_CUR);
-			fwscanf(doc, L"%[^,],", &x[i].sothich1);
-			x[i].sothich1[0] = ch;
+			demsothich++;
+			del = wcstok(NULL, L"\"");
+			flag[demsothich] = wcstok(NULL, L"\"");
 		}
-		ch = fgetwc(doc);
-		if (ch == L'\"')
-			fwscanf(doc, L"%[^\"]\",", &x[i].sothich2);
-		else
+		A.sothich = (wchar_t**)malloc(demsothich * sizeof(wchar_t*));
+		for (int i = 0; i < demsothich; i++)
 		{
-			fseek(doc, -1L, SEEK_CUR);
-			fwscanf(doc, L"%[^,],", &x[i].sothich2);
-			x[i].sothich2[0] = ch;
+			*(A.sothich + i) = flag[i];
 		}
-		ch = fgetwc(doc);
-		if (ch == L'\"')
-			fwscanf(doc, L"%[^\"]\"\n", &x[i].mota);
-		else
-		{
-			fseek(doc, -1L, SEEK_CUR);
-			fwscanf(doc, L"%[^\n]\n", &x[i].mota);
-			x[i].mota[0] = ch;
-		}
+		free(A.sothich);
 	}
 }
-void xuatthongtin(FILE *doc,sv *SV, int &n)
+void docdssv(FILE *doc,int &n)
+{
+	n = demsosv(doc);
+	unsigned int demsothich;
+	sv *a = (sv*)malloc(n*sizeof(sv));// bi loi!
+	for (int i = 0; i < n; i++)
+	{
+		docthongtin1sv(doc, demsothich, a[i]);
+	}
+}
+void xuatthongtin(FILE *doc, sv *SV, int &n,unsigned int &demsothich)
 {
 	n = demsosv(doc);
 	for (int i = 0; i < n; i++)
@@ -75,25 +89,28 @@ void xuatthongtin(FILE *doc,sv *SV, int &n)
 		wprintf(L"\n-MSSV: %ls ", SV[i].mssv);
 		wprintf(L"\n-Họ tên: %ls  ", SV[i].hoten);
 		wprintf(L"\n-Khoa: %ls ", SV[i].khoa);
-		printf("\n-Khóa: %d  ", SV[i].nienkhoa);
+		wprintf(L"\n-Khóa: %ls  ", SV[i].nienkhoa);
 		wprintf(L"\n-Email: %ls  ", SV[i].email);
 		wprintf(L"\n-Ngày sinh: %ls  ", SV[i].ngaysinh);
 		wprintf(L"\n-Hình ảnh: %ls  ", SV[i].image);
 		wprintf(L"\n-Mô tả bản thân:  %ls ", SV[i].mota);
-		wprintf(L"\n-Sở thích 1: %ls  ", SV[i].sothich1);
-		wprintf(L"\n-Sở thích 2: %ls  ", SV[i].sothich2);
+		for (int j = 0; j < demsothich; j++)
+			wprintf(L"\n-Sở thích: %ls \n ", *(SV[i].sothich + j));
 	}
 }
 void main()
 {
 	FILE *doc_csv;
 	sv *SV = NULL;
-	int n;
+	unsigned int demsothich;
+	_setmode(_fileno(stdout), _O_U16TEXT); //needed for output
+	_setmode(_fileno(stdin), _O_U16TEXT); //needed for input
 	_wfopen_s(&doc_csv, L"npvy.csv", L"rt,ccs=UTF-8");
 	if (doc_csv != NULL)
 	{
-		docthongtin(doc_csv, SV, n);
-		xuatthongtin(doc_csv,SV,n);
+		int n = demsosv(doc_csv);
+		docdssv(doc_csv, n);
+		xuatthongtin(doc_csv, SV, n,demsothich);
 		fclose(doc_csv);
 	}
 	else
